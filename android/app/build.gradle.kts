@@ -29,10 +29,10 @@ android {
 
     productFlavors {
         create("motorista") {
-            applicationIdSuffix = ".motorista"
+            applicationId = "br.com.urbanogo.motorista"
         }
         create("passageiro") {
-            applicationIdSuffix = ".passageiro"
+            applicationId = "br.com.urbanogo.passageiro"
         }
     }
 
