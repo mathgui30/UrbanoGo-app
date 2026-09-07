@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:urbanogo/features/pages/login_page.dart';
 
 void main() {
   runApp(MotoristaApp());
@@ -11,15 +12,15 @@ class MotoristaApp extends StatelessWidget {
       title: 'UrbanoGo Motorista',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-      ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('UrbanoGo Motorista'),
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Colors.black,
+        textTheme: TextTheme(
+          bodyText1: TextStyle(color: Colors.white),
+          bodyText2: TextStyle(color: Colors.white),
         ),
-        body: Center(
-          child: Text('Motorista App'),
-        ),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
+      home: LoginPage(flavor: 'motorista'),
     );
   }
 }
