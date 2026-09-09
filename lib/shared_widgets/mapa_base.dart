@@ -5,21 +5,38 @@ import 'package:latlong2/latlong.dart';
 class MapaBase extends StatelessWidget {
   final LatLng initialCenter;
   final double zoom;
+  final MapController? mapController;
+  final List<Marker>? markers;
 
-  MapaBase({required this.initialCenter, this.zoom = 13.0});
+  const MapaBase({
+    super.key,
+    required this.initialCenter,
+    this.zoom = 19.0,
+    this.mapController,
+    this.markers,
+  });
 
   @override
   Widget build(BuildContext context) {
     return FlutterMap(
-      options: MapOptions(
-        center: initialCenter,
-        zoom: zoom,
-      ),
-      layers: [
-        TileLayerOptions(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: ['a', 'b', 'c'],
+      mapController: mapController,
+      options: MapOptions(initialCenter: initialCenter, initialZoom: zoom),
+      children: [
+        ColorFiltered(
+          colorFilter: const ColorFilter.matrix([
+            -1, 0, 0, 0, 255, 
+            0, -1, 0, 0, 255, 
+            0, 0, -1, 0, 255, 
+            0, 0, 0, 1, 0, 
+          ]),
+          child: TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'br.com.urbanogo',
+          ),
         ),
+
+        if (markers != null && markers!.isNotEmpty)
+          MarkerLayer(markers: markers!),
       ],
     );
   }

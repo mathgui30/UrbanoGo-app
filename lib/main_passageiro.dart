@@ -1,26 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:urbanogo/features/pages/login_page.dart';
+import 'package:urbanogo/core/theme/app_theme.dart'; 
+import 'package:urbanogo/features/pages/auth/login_page.dart';
 
 void main() {
-  runApp(PassageiroApp());
+  runApp(const PassageiroApp());
 }
 
 class PassageiroApp extends StatelessWidget {
+  const PassageiroApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'UrbanoGo Passageiro',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
-        textTheme: TextTheme(
-          bodyText1: TextStyle(color: Colors.white),
-          bodyText2: TextStyle(color: Colors.white),
-        ),
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
-      home: LoginPage(flavor: 'passageiro'),
+      debugShowCheckedModeBanner: false,
+      theme: appTheme(), 
+      home: const LoginPage(flavor: 'passageiro'),
     );
   }
 }

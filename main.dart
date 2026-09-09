@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:urbanogo/lib/core/http/api_client.dart';
+import 'package:urbanogo/core/http/api_client.dart';
 
 void main() async {
   await dotenv.load(fileName: ".env.dev"); // Change to ".env.prod" for production

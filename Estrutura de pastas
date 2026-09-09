@@ -1,0 +1,11 @@
+lib/
+├── core/
+│   ├── theme/
+│   │   └── app_theme.dart
+├── shared_widgets/
+├── features/
+│   ├── mapa/
+│   ├── matching/
+│   └── perfil/
+├── main_motorista.dart
+└── main_passageiro.dart
