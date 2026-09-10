@@ -18,7 +18,7 @@ class SocketService {
   final _driverLocationController =
       StreamController<DriverLocationModel>.broadcast();
   final _errorController = StreamController<Map<String, dynamic>>.broadcast();
-
+  final _connectionController = StreamController<bool>.broadcast();
 
   Stream<MatchingOfferModel> get onMatchingOffer =>
       _matchingOfferController.stream;
@@ -28,6 +28,7 @@ class SocketService {
   Stream<DriverLocationModel> get onDriverLocation =>
       _driverLocationController.stream;
   Stream<Map<String, dynamic>> get onError => _errorController.stream;
+  Stream<bool> get onConnectionChanged => _connectionController.stream;
 
   void connect(String token) {
     if (_socket != null && _socket!.connected) return;
@@ -43,9 +44,14 @@ class SocketService {
 
     _socket!.connect();
 
-
-    _socket!.onConnect((_) => debugPrint('Conectado ao WebSocket'));
-    _socket!.onDisconnect((_) => debugPrint('Desconectado do WebSocket'));
+    _socket!.onConnect((_) {
+      debugPrint('Conectado ao WebSocket');
+      _connectionController.add(true);
+    });
+    _socket!.onDisconnect((_) {
+      debugPrint('Desconectado do WebSocket');
+      _connectionController.add(false);
+    });
     _socket!.onConnectError(
       (err) => debugPrint('⚠️ Erro de conexão WebSocket: $err'),
     );
@@ -75,6 +81,7 @@ class SocketService {
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
+    _connectionController.add(false);
   }
 
   void joinRide(String rideId) {

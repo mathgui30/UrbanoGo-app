@@ -5,6 +5,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:urbanogo/core/repositories/ride_repository.dart';
+import 'package:urbanogo/core/network/api_client.dart';
+import 'package:urbanogo/core/network/socket_service.dart';
 import 'package:urbanogo/features/pages/auth/cubit/auth_cubit.dart';
 import 'package:urbanogo/features/pages/auth/login_page.dart';
 import 'package:urbanogo/features/pages/ride/cubit/ride_flow_cubit.dart';
@@ -19,7 +21,11 @@ class HomeMapPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RideFlowCubit>(
-      create: (context) => RideFlowCubit(context.read<RideRepository>()),
+      create: (context) => RideFlowCubit(
+        context.read<RideRepository>(),
+        context.read<SocketService>(),
+        context.read<ApiClient>(),
+      ),
       child: _HomeMapView(flavor: flavor),
     );
   }
@@ -34,9 +40,14 @@ class _HomeMapView extends StatefulWidget {
   State<_HomeMapView> createState() => _HomeMapViewState();
 }
 
-class _HomeMapViewState extends State<_HomeMapView> {
+class _HomeMapViewState extends State<_HomeMapView>
+    with SingleTickerProviderStateMixin {
   final MapController _mapController = MapController();
+  late final AnimationController _driverAnimation;
   LatLng? _currentPosition;
+  LatLng? _driverPosition;
+  LatLng? _driverTarget;
+  LatLng? _driverStart;
   StreamSubscription<Position>? _positionStream;
 
   bool get _isPassenger => widget.flavor == 'passageiro';
@@ -44,6 +55,23 @@ class _HomeMapViewState extends State<_HomeMapView> {
   @override
   void initState() {
     super.initState();
+    _driverAnimation =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(seconds: 5),
+        )..addListener(() {
+          final start = _driverStart;
+          final target = _driverTarget;
+          if (start == null || target == null || !mounted) return;
+          setState(() {
+            _driverPosition = LatLng(
+              start.latitude +
+                  (target.latitude - start.latitude) * _driverAnimation.value,
+              start.longitude +
+                  (target.longitude - start.longitude) * _driverAnimation.value,
+            );
+          });
+        });
     _startLocationTracking();
   }
 
@@ -83,7 +111,17 @@ class _HomeMapViewState extends State<_HomeMapView> {
   @override
   void dispose() {
     _positionStream?.cancel();
+    _driverAnimation.dispose();
     super.dispose();
+  }
+
+  void _animateDriverTo(LatLng target) {
+    if (_driverTarget == target) return;
+    _driverAnimation.stop();
+    _driverStart = _driverPosition ?? target;
+    _driverTarget = target;
+    _driverPosition ??= target;
+    _driverAnimation.forward(from: 0);
   }
 
   void _centerMapOnUser() {
@@ -121,6 +159,13 @@ class _HomeMapViewState extends State<_HomeMapView> {
             )
           : BlocBuilder<RideFlowCubit, RideFlowState>(
               builder: (context, ride) {
+                final driverLocation = ride.driverLocation;
+                if (driverLocation != null) {
+                  final target = LatLng(driverLocation.lat, driverLocation.lng);
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => _animateDriverTo(target),
+                  );
+                }
                 return Stack(
                   children: [
                     MapaBase(
@@ -128,10 +173,9 @@ class _HomeMapViewState extends State<_HomeMapView> {
                       zoom: 19.0,
                       mapController: _mapController,
                       onTap: _isPassenger
-                          ? (point) =>
-                                context.read<RideFlowCubit>().chooseDestination(
-                                  point,
-                                )
+                          ? (point) => context
+                                .read<RideFlowCubit>()
+                                .chooseDestination(point)
                           : null,
                       markers: [
                         Marker(
@@ -153,6 +197,22 @@ class _HomeMapViewState extends State<_HomeMapView> {
                               Icons.location_on,
                               color: Colors.redAccent,
                               size: 36,
+                            ),
+                          ),
+                        if (ride.driverLocation != null)
+                          Marker(
+                            point:
+                                _driverPosition ??
+                                LatLng(
+                                  ride.driverLocation!.lat,
+                                  ride.driverLocation!.lng,
+                                ),
+                            width: 60,
+                            height: 60,
+                            child: const Icon(
+                              Icons.directions_car,
+                              color: Colors.amber,
+                              size: 34,
                             ),
                           ),
                       ],
@@ -180,7 +240,10 @@ class _HomeMapViewState extends State<_HomeMapView> {
                             decoration: InputDecoration(
                               hintText: 'Para onde vamos?',
                               hintStyle: TextStyle(color: Colors.grey),
-                              prefixIcon: Icon(Icons.search, color: Colors.white),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: Colors.white,
+                              ),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 20,

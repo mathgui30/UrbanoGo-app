@@ -5,7 +5,9 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:urbanogo/core/models/quote_model.dart';
 import 'package:urbanogo/core/models/ride_model.dart';
+import 'package:urbanogo/core/models/socket_events_model.dart';
 import 'package:urbanogo/core/network/api_client.dart';
+import 'package:urbanogo/core/network/socket_service.dart';
 import 'package:urbanogo/core/repositories/ride_repository.dart';
 
 part 'ride_flow_state.dart';
@@ -17,9 +19,23 @@ const _terminalStatuses = {'completed', 'cancelled', 'expired'};
 
 class RideFlowCubit extends Cubit<RideFlowState> {
   final RideRepository _rideRepository;
+  final SocketService _socketService;
+  final ApiClient _apiClient;
   Timer? _pollTimer;
+  StreamSubscription<DriverLocationModel>? _locationSubscription;
+  StreamSubscription<RideStatusEventModel>? _statusSubscription;
+  StreamSubscription<bool>? _connectionSubscription;
 
-  RideFlowCubit(this._rideRepository) : super(const RideFlowState());
+  RideFlowCubit(this._rideRepository, this._socketService, this._apiClient)
+    : super(const RideFlowState()) {
+    _locationSubscription = _socketService.onDriverLocation.listen(
+      _onDriverLocation,
+    );
+    _statusSubscription = _socketService.onRideStatus.listen(_onRideStatus);
+    _connectionSubscription = _socketService.onConnectionChanged.listen(
+      _onConnectionChanged,
+    );
+  }
 
   bool get _locked =>
       state.status == RideFlowStatus.requesting ||
@@ -73,10 +89,7 @@ class RideFlowCubit extends Cubit<RideFlowState> {
       );
     } on ApiException catch (e) {
       emit(
-        state.copyWith(
-          status: RideFlowStatus.failure,
-          errorMessage: e.message,
-        ),
+        state.copyWith(status: RideFlowStatus.failure, errorMessage: e.message),
       );
     } catch (_) {
       emit(
@@ -103,13 +116,10 @@ class RideFlowCubit extends Cubit<RideFlowState> {
         },
       });
       emit(state.copyWith(status: RideFlowStatus.tracking, ride: ride));
-      _startPolling(ride.id);
+      _connectToRide(ride.id);
     } on ApiException catch (e) {
       emit(
-        state.copyWith(
-          status: RideFlowStatus.failure,
-          errorMessage: e.message,
-        ),
+        state.copyWith(status: RideFlowStatus.failure, errorMessage: e.message),
       );
     } catch (_) {
       emit(
@@ -133,10 +143,7 @@ class RideFlowCubit extends Cubit<RideFlowState> {
       emit(state.copyWith(status: RideFlowStatus.cancelled, ride: cancelled));
     } on ApiException catch (e) {
       emit(
-        state.copyWith(
-          status: RideFlowStatus.failure,
-          errorMessage: e.message,
-        ),
+        state.copyWith(status: RideFlowStatus.failure, errorMessage: e.message),
       );
     } catch (_) {
       emit(
@@ -149,14 +156,52 @@ class RideFlowCubit extends Cubit<RideFlowState> {
   }
 
   void reset() {
+    if (state.ride != null) _socketService.leaveRide(state.ride!.id);
     _pollTimer?.cancel();
     emit(const RideFlowState());
+  }
+
+  void _connectToRide(String rideId) {
+    final token = _apiClient.token;
+    if (token == null) {
+      _startPolling(rideId);
+      return;
+    }
+    _socketService.connect(token);
+    _startPolling(rideId);
+  }
+
+  void _onConnectionChanged(bool connected) {
+    final ride = state.ride;
+    if (ride == null) return;
+    if (connected) {
+      _socketService.joinRide(ride.id);
+      _pollTimer?.cancel();
+      _poll(ride.id);
+    } else {
+      _startPolling(ride.id);
+    }
+  }
+
+  void _onDriverLocation(DriverLocationModel location) {
+    if (location.rideId != state.ride?.id) return;
+    emit(
+      state.copyWith(
+        previousDriverLocation: state.driverLocation,
+        driverLocation: location,
+      ),
+    );
+  }
+
+  void _onRideStatus(RideStatusEventModel event) {
+    if (event.rideId != state.ride?.id) return;
+    _poll(event.rideId);
   }
 
   void _startPolling(String rideId) {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(
-      const Duration(seconds: 3),
+      const Duration(seconds: 10),
       (_) => _poll(rideId),
     );
   }
@@ -185,6 +230,9 @@ class RideFlowCubit extends Cubit<RideFlowState> {
   @override
   Future<void> close() {
     _pollTimer?.cancel();
+    _locationSubscription?.cancel();
+    _statusSubscription?.cancel();
+    _connectionSubscription?.cancel();
     return super.close();
   }
 }

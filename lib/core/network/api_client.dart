@@ -17,6 +17,8 @@ class ApiClient {
   final String baseUrl = AppConfig.apiBaseUrl;
   String? _token;
 
+  String? get token => _token;
+
   void setToken(String token) {
     _token = token;
   }

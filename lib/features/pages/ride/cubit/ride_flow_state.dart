@@ -19,6 +19,8 @@ class RideFlowState {
   final QuoteModel? quote;
   final RideModel? ride;
   final String? errorMessage;
+  final DriverLocationModel? driverLocation;
+  final DriverLocationModel? previousDriverLocation;
 
   const RideFlowState({
     this.status = RideFlowStatus.idle,
@@ -27,11 +29,12 @@ class RideFlowState {
     this.quote,
     this.ride,
     this.errorMessage,
+    this.driverLocation,
+    this.previousDriverLocation,
   });
 
   bool get isBusy =>
-      status == RideFlowStatus.quoting ||
-      status == RideFlowStatus.requesting;
+      status == RideFlowStatus.quoting || status == RideFlowStatus.requesting;
 
   RideFlowState copyWith({
     RideFlowStatus? status,
@@ -40,6 +43,8 @@ class RideFlowState {
     QuoteModel? quote,
     RideModel? ride,
     String? errorMessage,
+    DriverLocationModel? driverLocation,
+    DriverLocationModel? previousDriverLocation,
     bool clearQuote = false,
     bool clearError = false,
   }) {
@@ -50,6 +55,9 @@ class RideFlowState {
       quote: clearQuote ? null : (quote ?? this.quote),
       ride: ride ?? this.ride,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      driverLocation: driverLocation ?? this.driverLocation,
+      previousDriverLocation:
+          previousDriverLocation ?? this.previousDriverLocation,
     );
   }
 }
