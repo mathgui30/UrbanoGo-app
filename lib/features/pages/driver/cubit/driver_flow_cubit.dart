@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urbanogo/core/models/matching_offer_model.dart';
 import 'package:urbanogo/core/models/ride_model.dart';
@@ -59,8 +60,18 @@ class DriverFlowCubit extends Cubit<DriverFlowState> {
       final ride = await _offerRepository.acceptOffer(offer.offerId);
       _offerTimer?.cancel();
       _socket.joinRide(ride.id);
-      emit(state.copyWith(ride: ride, clearOffer: true));
-    } catch (_) {
+      emit(
+        state.copyWith(
+          ride: ride,
+          clearOffer: true,
+          busy: false,
+          arrived: false,
+          ratingSubmitting: false,
+          ratingSubmitted: false,
+        ),
+      );
+    } catch (error) {
+      debugPrint('accept() falhou: $error');
       emit(
         state.copyWith(
           clearOffer: true,
@@ -87,6 +98,98 @@ class DriverFlowCubit extends Cubit<DriverFlowState> {
         ),
       );
     }
+  }
+
+  Future<void> arrive() async {
+    final ride = state.ride;
+    if (ride == null || state.busy) return;
+    emit(state.copyWith(busy: true));
+    try {
+      await _rideRepository.arrive(ride.id);
+      emit(
+        state.copyWith(
+          busy: false,
+          arrived: true,
+          ride: await _rideRepository.getRide(ride.id),
+        ),
+      );
+    } catch (_) {
+      emit(
+        state.copyWith(
+          busy: false,
+          errorMessage: 'Não foi possível confirmar a chegada. Tente de novo.',
+        ),
+      );
+    }
+  }
+
+  Future<void> startTrip() async {
+    final ride = state.ride;
+    if (ride == null || state.busy) return;
+    emit(state.copyWith(busy: true));
+    try {
+      await _rideRepository.start(ride.id);
+      emit(
+        state.copyWith(busy: false, ride: await _rideRepository.getRide(ride.id)),
+      );
+    } catch (_) {
+      emit(
+        state.copyWith(
+          busy: false,
+          errorMessage: 'Não foi possível iniciar a viagem. Tente de novo.',
+        ),
+      );
+    }
+  }
+
+  Future<void> completeTrip() async {
+    final ride = state.ride;
+    if (ride == null || state.busy) return;
+    emit(state.copyWith(busy: true));
+    try {
+      await _rideRepository.complete(ride.id);
+      emit(
+        state.copyWith(busy: false, ride: await _rideRepository.getRide(ride.id)),
+      );
+    } catch (_) {
+      emit(
+        state.copyWith(
+          busy: false,
+          errorMessage: 'Não foi possível concluir a corrida. Tente de novo.',
+        ),
+      );
+    }
+  }
+
+  Future<void> rateRide(int score, String? comment) async {
+    final ride = state.ride;
+    if (ride == null || state.ratingSubmitting || state.ratingSubmitted) return;
+    emit(state.copyWith(ratingSubmitting: true));
+    try {
+      await _rideRepository.rate(ride.id, score, comment: comment);
+      emit(state.copyWith(ratingSubmitting: false, ratingSubmitted: true));
+    } catch (_) {
+      emit(
+        state.copyWith(
+          ratingSubmitting: false,
+          errorMessage: 'Não foi possível enviar a avaliação. Tente de novo.',
+        ),
+      );
+    }
+  }
+
+  void finishRide() {
+    final ride = state.ride;
+    if (ride != null) _socket.leaveRide(ride.id);
+    emit(
+      state.copyWith(
+        clearRide: true,
+        busy: false,
+        arrived: false,
+        ratingSubmitting: false,
+        ratingSubmitted: false,
+      ),
+    );
   }
 
   void _showOffer(MatchingOfferModel offer) {

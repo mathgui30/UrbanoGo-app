@@ -57,24 +57,58 @@ class SocketService {
     );
 
     _socket!.on('matching:offer', (data) {
-      _matchingOfferController.add(MatchingOfferModel.fromJson(data));
+      _safeAdd('matching:offer', () {
+        _matchingOfferController.add(MatchingOfferModel.fromJson(_asMap(data)));
+      });
     });
 
     _socket!.on('matching:cancelled', (data) {
-      _matchingCancelledController.add(Map<String, dynamic>.from(data));
+      _safeAdd('matching:cancelled', () {
+        _matchingCancelledController.add(_asMap(data));
+      });
     });
 
     _socket!.on('ride:status', (data) {
-      _rideStatusController.add(RideStatusEventModel.fromJson(data));
+      _safeAdd('ride:status', () {
+        _rideStatusController.add(RideStatusEventModel.fromJson(_asMap(data)));
+      });
     });
 
     _socket!.on('ride:driver_location', (data) {
-      _driverLocationController.add(DriverLocationModel.fromJson(data));
+      _safeAdd('ride:driver_location', () {
+        _driverLocationController.add(DriverLocationModel.fromJson(_asMap(data)));
+      });
     });
 
     _socket!.on('error', (data) {
-      _errorController.add(Map<String, dynamic>.from(data));
+      _safeAdd('error', () {
+        _errorController.add(_asMap(data));
+      });
     });
+  }
+
+  void _safeAdd(String event, void Function() parse) {
+    try {
+      parse();
+    } catch (error, stack) {
+      debugPrint('⚠️ Falha ao processar evento $event: $error\n$stack');
+    }
+  }
+
+  static Map<String, dynamic> _asMap(dynamic data) {
+    final normalized = _normalize(data);
+    if (normalized is Map<String, dynamic>) return normalized;
+    throw FormatException('payload de socket não é um objeto: $data');
+  }
+
+  static dynamic _normalize(dynamic value) {
+    if (value is Map) {
+      return value.map(
+        (key, dynamic v) => MapEntry(key.toString(), _normalize(v)),
+      );
+    }
+    if (value is List) return value.map<dynamic>(_normalize).toList();
+    return value;
   }
 
   void disconnect() {
