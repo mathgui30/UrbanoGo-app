@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:urbanogo/core/theme/app_colors.dart';
 import 'package:urbanogo/features/pages/auth/cubit/auth_cubit.dart';
 import 'package:urbanogo/features/pages/auth/register_page.dart';
 import 'package:urbanogo/features/pages/home_map_page.dart';
+import 'package:urbanogo/shared_widgets/urbanogo_wordmark.dart';
 
 class LoginPage extends StatefulWidget {
   final String flavor;
@@ -62,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.ink,
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: _onAuthState,
         builder: (context, state) {
@@ -110,22 +112,16 @@ class _LoginPageState extends State<LoginPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const SizedBox(height: 40),
-                            Icon(
-                              widget.flavor == 'motorista'
-                                  ? Icons.directions_car
-                                  : Icons.person,
-                              color: Colors.white,
-                              size: 80,
-                            ),
-                            const SizedBox(height: 16),
+                            const UrbanogoWordmark(fontSize: 40),
+                            const SizedBox(height: 12),
                             Text(
                               widget.flavor == 'motorista'
-                                  ? 'UrbanoGo Driver'
-                                  : 'UrbanoGo',
+                                  ? 'Motorista'
+                                  : 'Passageiro',
                               style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
+                                color: AppColors.mist,
+                                fontSize: 16,
+                                letterSpacing: 0.5,
                               ),
                             ),
                           ],

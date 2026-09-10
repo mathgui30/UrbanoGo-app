@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:urbanogo/core/providers/app_providers.dart';
 import 'package:urbanogo/core/theme/app_theme.dart';
-import 'package:urbanogo/features/pages/auth/login_page.dart';
+import 'package:urbanogo/features/pages/splash_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +20,7 @@ class PassageiroApp extends StatelessWidget {
         title: 'UrbanoGo Passageiro',
         debugShowCheckedModeBanner: false,
         theme: appTheme(),
-        home: const LoginPage(flavor: 'passageiro'),
+        home: const SplashPage(flavor: 'passageiro'),
       ),
     );
   }

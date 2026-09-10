@@ -23,6 +23,10 @@ class ApiClient {
     _token = token;
   }
 
+  void clearToken() {
+    _token = null;
+  }
+
   Map<String, String> _buildHeaders({bool json = false}) {
     return {
       if (json) 'Content-Type': 'application/json',
