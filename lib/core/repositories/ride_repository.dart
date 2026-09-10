@@ -24,7 +24,7 @@ class RideRepository {
   Future<RideModel> cancelRide(String id, {String? reason}) async {
     final data = await _client.post(
       '/rides/$id/cancel',
-      body: {if (reason != null) 'reason': reason},
+      body: {'reason': ?reason},
     );
     return RideModel.fromJson(data['ride']);
   }
@@ -44,7 +44,7 @@ class RideRepository {
   Future<void> rate(String id, int score, {String? comment}) async {
     await _client.post(
       '/rides/$id/ratings',
-      body: {'score': score, if (comment != null) 'comment': comment},
+      body: {'score': score, 'comment': ?comment},
     );
   }
 }
