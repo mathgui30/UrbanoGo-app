@@ -8,6 +8,7 @@ class MapaBase extends StatelessWidget {
   final MapController? mapController;
   final List<Marker>? markers;
   final void Function(LatLng point)? onTap;
+  final VoidCallback? onMapReady;
 
   const MapaBase({
     super.key,
@@ -16,6 +17,7 @@ class MapaBase extends StatelessWidget {
     this.mapController,
     this.markers,
     this.onTap,
+    this.onMapReady,
   });
 
   @override
@@ -26,14 +28,31 @@ class MapaBase extends StatelessWidget {
         initialCenter: initialCenter,
         initialZoom: zoom,
         onTap: onTap == null ? null : (_, point) => onTap!(point),
+        onMapReady: onMapReady,
       ),
       children: [
         ColorFiltered(
           colorFilter: const ColorFilter.matrix([
-            -1, 0, 0, 0, 255,
-            0, -1, 0, 0, 255,
-            0, 0, -1, 0, 255,
-            0, 0, 0, 1, 0,
+            -1,
+            0,
+            0,
+            0,
+            255,
+            0,
+            -1,
+            0,
+            0,
+            255,
+            0,
+            0,
+            -1,
+            0,
+            255,
+            0,
+            0,
+            0,
+            1,
+            0,
           ]),
           child: TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',

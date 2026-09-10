@@ -7,6 +7,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:urbanogo/core/repositories/ride_repository.dart';
 import 'package:urbanogo/core/network/api_client.dart';
 import 'package:urbanogo/core/network/socket_service.dart';
+import 'package:urbanogo/core/repositories/driver_repository.dart';
+import 'package:urbanogo/features/pages/driver/cubit/driver_flow_cubit.dart';
 import 'package:urbanogo/features/pages/auth/cubit/auth_cubit.dart';
 import 'package:urbanogo/features/pages/auth/login_page.dart';
 import 'package:urbanogo/features/pages/ride/cubit/ride_flow_cubit.dart';
@@ -20,12 +22,26 @@ class HomeMapPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<RideFlowCubit>(
-      create: (context) => RideFlowCubit(
-        context.read<RideRepository>(),
-        context.read<SocketService>(),
-        context.read<ApiClient>(),
-      ),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<RideFlowCubit>(
+          create: (context) => RideFlowCubit(
+            context.read<RideRepository>(),
+            context.read<SocketService>(),
+            context.read<ApiClient>(),
+          ),
+        ),
+        if (flavor == 'motorista')
+          BlocProvider<DriverFlowCubit>(
+            create: (context) => DriverFlowCubit(
+              context.read<DriverRepository>(),
+              context.read<OfferRepository>(),
+              context.read<RideRepository>(),
+              context.read<SocketService>(),
+              context.read<ApiClient>(),
+            ),
+          ),
+      ],
       child: _HomeMapView(flavor: flavor),
     );
   }
@@ -49,6 +65,9 @@ class _HomeMapViewState extends State<_HomeMapView>
   LatLng? _driverTarget;
   LatLng? _driverStart;
   StreamSubscription<Position>? _positionStream;
+  DateTime? _lastDriverLocationSent;
+  LatLng? _lastDriverLocation;
+  bool _mapReady = false;
 
   bool get _isPassenger => widget.flavor == 'passageiro';
 
@@ -92,7 +111,8 @@ class _HomeMapViewState extends State<_HomeMapView>
       _currentPosition = LatLng(initialPos.latitude, initialPos.longitude);
     });
 
-    _mapController.move(_currentPosition!, 19.0);
+    _sendDriverLocation(initialPos);
+    _moveMapToCurrentPosition();
 
     _positionStream =
         Geolocator.getPositionStream(
@@ -105,7 +125,41 @@ class _HomeMapViewState extends State<_HomeMapView>
           setState(() {
             _currentPosition = LatLng(position.latitude, position.longitude);
           });
+          _sendDriverLocation(position);
         });
+  }
+
+  void _sendDriverLocation(Position position) {
+    if (_isPassenger) return;
+
+    final driverFlow = context.read<DriverFlowCubit>();
+    if (!driverFlow.state.online) return;
+
+    final current = LatLng(position.latitude, position.longitude);
+    final elapsed = _lastDriverLocationSent == null
+        ? null
+        : DateTime.now().difference(_lastDriverLocationSent!);
+    final movedMeters = _lastDriverLocation == null
+        ? null
+        : Geolocator.distanceBetween(
+            _lastDriverLocation!.latitude,
+            _lastDriverLocation!.longitude,
+            current.latitude,
+            current.longitude,
+          );
+    if (elapsed != null && elapsed.inSeconds < 5 && (movedMeters ?? 0) < 20) {
+      return;
+    }
+
+    _lastDriverLocationSent = DateTime.now();
+    _lastDriverLocation = current;
+    driverFlow.sendLocation(current.latitude, current.longitude);
+  }
+
+  void _moveMapToCurrentPosition() {
+    if (_mapReady && _currentPosition != null) {
+      _mapController.move(_currentPosition!, 19.0);
+    }
   }
 
   @override
@@ -126,7 +180,7 @@ class _HomeMapViewState extends State<_HomeMapView>
 
   void _centerMapOnUser() {
     if (_currentPosition != null) {
-      _mapController.move(_currentPosition!, 19.0);
+      _moveMapToCurrentPosition();
     }
   }
 
@@ -172,6 +226,10 @@ class _HomeMapViewState extends State<_HomeMapView>
                       initialCenter: _currentPosition!,
                       zoom: 19.0,
                       mapController: _mapController,
+                      onMapReady: () {
+                        _mapReady = true;
+                        _moveMapToCurrentPosition();
+                      },
                       onTap: _isPassenger
                           ? (point) => context
                                 .read<RideFlowCubit>()
@@ -223,37 +281,139 @@ class _HomeMapViewState extends State<_HomeMapView>
                         top: 50,
                         left: 16,
                         right: 16,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[900],
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.5),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const TextField(
-                            style: TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              hintText: 'Para onde vamos?',
-                              hintStyle: TextStyle(color: Colors.grey),
-                              prefixIcon: Icon(
-                                Icons.search,
-                                color: Colors.white,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 15,
-                              ),
+                        child: BlocBuilder<DriverFlowCubit, DriverFlowState>(
+                          builder: (context, driver) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[900],
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    driver.online
+                                        ? 'Você está online'
+                                        : 'Você está offline',
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                                Switch(
+                                  value: driver.online,
+                                  onChanged: (online) async {
+                                    final driverFlow = context
+                                        .read<DriverFlowCubit>();
+                                    await driverFlow.setOnline(online);
+                                    if (online &&
+                                        driverFlow.state.online &&
+                                        _currentPosition != null) {
+                                      driverFlow.sendLocation(
+                                        _currentPosition!.latitude,
+                                        _currentPosition!.longitude,
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ),
-
+                    if (!_isPassenger)
+                      BlocBuilder<DriverFlowCubit, DriverFlowState>(
+                        builder: (context, driver) {
+                          final offer = driver.offer;
+                          if (offer == null) return const SizedBox.shrink();
+                          return Positioned(
+                            left: 16,
+                            right: 16,
+                            bottom: 36,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[900],
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Nova corrida',
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    Text(
+                                      offer.passenger.name,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '${(offer.distanceToPickupMeters / 1000).toStringAsFixed(1)} km até o embarque',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    StreamBuilder<int>(
+                                      stream: Stream.periodic(
+                                        const Duration(seconds: 1),
+                                        (value) => value,
+                                      ),
+                                      builder: (context, snapshot) {
+                                        final seconds = offer.expiresAt
+                                            .difference(DateTime.now())
+                                            .inSeconds
+                                            .clamp(0, 15);
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 12,
+                                          ),
+                                          child: Text(
+                                            'Responda em ${seconds}s',
+                                            style: const TextStyle(
+                                              color: Colors.amber,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        OutlinedButton(
+                                          onPressed: context
+                                              .read<DriverFlowCubit>()
+                                              .reject,
+                                          child: const Text('Recusar'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: context
+                                              .read<DriverFlowCubit>()
+                                              .accept,
+                                          child: const Text('Aceitar'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     Positioned(
                       bottom: _isPassenger ? 300 : 30,
                       right: 16,
