@@ -8,6 +8,7 @@ import 'package:urbanogo/core/repositories/driver_repository.dart';
 import 'package:urbanogo/core/repositories/ride_repository.dart';
 import 'package:urbanogo/core/repositories/user_repository.dart';
 import 'package:urbanogo/core/repositories/health_repository.dart';
+import 'package:urbanogo/features/pages/auth/cubit/auth_cubit.dart';
 
 class AppProviders extends StatelessWidget {
   final Widget child;
@@ -42,7 +43,17 @@ class AppProviders extends StatelessWidget {
             create: (context) => HealthRepository(context.read<ApiClient>()),
           ),
         ],
-        child: child,
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>(
+              create: (context) => AuthCubit(
+                context.read<AuthRepository>(),
+                context.read<DriverRepository>(),
+              ),
+            ),
+          ],
+          child: child,
+        ),
       ),
     );
   }

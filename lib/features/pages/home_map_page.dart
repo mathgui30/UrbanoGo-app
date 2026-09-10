@@ -1,12 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:urbanogo/features/pages/auth/cubit/auth_cubit.dart';
+import 'package:urbanogo/features/pages/auth/login_page.dart';
 import 'package:urbanogo/shared_widgets/mapa_base.dart';
 
 class HomeMapPage extends StatefulWidget {
-  const HomeMapPage({super.key});
+  final String flavor;
+
+  const HomeMapPage({super.key, this.flavor = 'passageiro'});
 
   @override
   State<HomeMapPage> createState() => _HomeMapPageState();
@@ -35,6 +40,7 @@ class _HomeMapPageState extends State<HomeMapPage> {
     if (permission == LocationPermission.deniedForever) return;
 
     Position initialPos = await Geolocator.getCurrentPosition();
+    if (!mounted) return;
     setState(() {
       _currentPosition = LatLng(initialPos.latitude, initialPos.longitude);
     });
@@ -48,6 +54,7 @@ class _HomeMapPageState extends State<HomeMapPage> {
             distanceFilter: 5,
           ),
         ).listen((Position position) {
+          if (!mounted) return;
           setState(() {
             _currentPosition = LatLng(position.latitude, position.longitude);
           });
@@ -64,6 +71,15 @@ class _HomeMapPageState extends State<HomeMapPage> {
     if (_currentPosition != null) {
       _mapController.move(_currentPosition!, 19.0);
     }
+  }
+
+  void _logout() {
+    context.read<AuthCubit>().logout();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => LoginPage(flavor: widget.flavor)),
+      (route) => false,
+    );
   }
 
   @override
@@ -114,7 +130,7 @@ class _HomeMapPageState extends State<HomeMapPage> {
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -140,11 +156,25 @@ class _HomeMapPageState extends State<HomeMapPage> {
                 Positioned(
                   bottom: 30,
                   right: 16,
-                  child: FloatingActionButton(
-                    backgroundColor: Colors.grey[900],
-                    foregroundColor: Colors.white,
-                    onPressed: _centerMapOnUser,
-                    child: const Icon(Icons.gps_fixed),
+                  child: Column(
+                    children: [
+                      FloatingActionButton(
+                        heroTag: 'logout',
+                        mini: true,
+                        backgroundColor: Colors.grey[900],
+                        foregroundColor: Colors.white,
+                        onPressed: _logout,
+                        child: const Icon(Icons.logout),
+                      ),
+                      const SizedBox(height: 12),
+                      FloatingActionButton(
+                        heroTag: 'recenter',
+                        backgroundColor: Colors.grey[900],
+                        foregroundColor: Colors.white,
+                        onPressed: _centerMapOnUser,
+                        child: const Icon(Icons.gps_fixed),
+                      ),
+                    ],
                   ),
                 ),
               ],

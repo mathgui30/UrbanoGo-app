@@ -1,12 +1,13 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:urbanogo/core/config/app_config.dart';
 import 'package:urbanogo/core/models/socket_events_model.dart';
 import 'package:urbanogo/core/models/matching_offer_model.dart';
 
 class SocketService {
   io.Socket? _socket;
-  final String baseUrl =
-      'http://10.0.2.2:3000'; 
+  final String baseUrl = AppConfig.apiBaseUrl;
 
   final _matchingOfferController =
       StreamController<MatchingOfferModel>.broadcast();
@@ -43,10 +44,10 @@ class SocketService {
     _socket!.connect();
 
 
-    _socket!.onConnect((_) => print('Conectado ao WebSocket'));
-    _socket!.onDisconnect((_) => print('Desconectado do WebSocket'));
+    _socket!.onConnect((_) => debugPrint('Conectado ao WebSocket'));
+    _socket!.onDisconnect((_) => debugPrint('Desconectado do WebSocket'));
     _socket!.onConnectError(
-      (err) => print('⚠️ Erro de conexão WebSocket: $err'),
+      (err) => debugPrint('⚠️ Erro de conexão WebSocket: $err'),
     );
 
     _socket!.on('matching:offer', (data) {
