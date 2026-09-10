@@ -17,7 +17,7 @@ class MotoristaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppProviders(
       child: MaterialApp(
-        title: 'UrbanoGo Driver',
+        title: 'UrbanoGo Motorista',
         debugShowCheckedModeBanner: false,
         theme: appTheme(),
         home: const LoginPage(flavor: 'motorista'),
