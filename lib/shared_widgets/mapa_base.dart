@@ -7,6 +7,7 @@ class MapaBase extends StatelessWidget {
   final double zoom;
   final MapController? mapController;
   final List<Marker>? markers;
+  final void Function(LatLng point)? onTap;
 
   const MapaBase({
     super.key,
@@ -14,20 +15,25 @@ class MapaBase extends StatelessWidget {
     this.zoom = 19.0,
     this.mapController,
     this.markers,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return FlutterMap(
       mapController: mapController,
-      options: MapOptions(initialCenter: initialCenter, initialZoom: zoom),
+      options: MapOptions(
+        initialCenter: initialCenter,
+        initialZoom: zoom,
+        onTap: onTap == null ? null : (_, point) => onTap!(point),
+      ),
       children: [
         ColorFiltered(
           colorFilter: const ColorFilter.matrix([
-            -1, 0, 0, 0, 255, 
-            0, -1, 0, 0, 255, 
-            0, 0, -1, 0, 255, 
-            0, 0, 0, 1, 0, 
+            -1, 0, 0, 0, 255,
+            0, -1, 0, 0, 255,
+            0, 0, -1, 0, 255,
+            0, 0, 0, 1, 0,
           ]),
           child: TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
