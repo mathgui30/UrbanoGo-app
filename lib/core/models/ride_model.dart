@@ -35,7 +35,7 @@ class RideDriverModel {
         name: json['name'] as String,
         vehicleModel: json['vehicle_model'] as String,
         vehiclePlate: json['vehicle_plate'] as String,
-        trustScore: (json['trust_score'] as num).toDouble(),
+      trustScore: (json['trust_score'] as num?)?.toDouble() ?? 0,
       );
 
   Map<String, dynamic> toJson() => {
