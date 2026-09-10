@@ -63,7 +63,7 @@ ThemeData appTheme() {
         disabledBackgroundColor: AppColors.line,
         disabledForegroundColor: AppColors.mist,
         elevation: 0,
-        minimumSize: const Size.fromHeight(52),
+        minimumSize: const Size(64, 52),
         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -73,7 +73,7 @@ ThemeData appTheme() {
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.cloud,
         side: const BorderSide(color: AppColors.line),
-        minimumSize: const Size.fromHeight(52),
+        minimumSize: const Size(64, 52),
         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

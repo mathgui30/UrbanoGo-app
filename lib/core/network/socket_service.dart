@@ -33,6 +33,7 @@ class SocketService {
   void connect(String token) {
     if (_socket != null && _socket!.connected) return;
 
+    _socket?.dispose();
     _socket = io.io(
       baseUrl,
       io.OptionBuilder()
@@ -41,8 +42,6 @@ class SocketService {
           .setAuth({'token': token})
           .build(),
     );
-
-    _socket!.connect();
 
     _socket!.onConnect((_) {
       debugPrint('Conectado ao WebSocket');
@@ -85,6 +84,8 @@ class SocketService {
         _errorController.add(_asMap(data));
       });
     });
+
+    _socket!.connect();
   }
 
   void _safeAdd(String event, void Function() parse) {
