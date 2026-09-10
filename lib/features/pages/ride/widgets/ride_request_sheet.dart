@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:urbanogo/core/models/ride_model.dart';
+import 'package:urbanogo/core/theme/app_colors.dart';
 import 'package:urbanogo/features/pages/ride/cubit/ride_flow_cubit.dart';
 import 'package:urbanogo/features/pages/ride/widgets/rating_form.dart';
 
@@ -34,24 +35,31 @@ class RideRequestSheet extends StatelessWidget {
     return BlocBuilder<RideFlowCubit, RideFlowState>(
       builder: (context, state) {
         return Container(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          decoration: BoxDecoration(
-            color: Colors.grey[900],
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                blurRadius: 12,
-                offset: const Offset(0, -4),
-              ),
-            ],
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+          decoration: const BoxDecoration(
+            color: AppColors.slate,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(top: BorderSide(color: AppColors.line)),
           ),
           child: SafeArea(
             top: false,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: _content(context, state),
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.line,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                ..._content(context, state),
+              ],
             ),
           ),
         );

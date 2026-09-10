@@ -8,9 +8,9 @@ import 'package:urbanogo/core/repositories/ride_repository.dart';
 import 'package:urbanogo/core/network/api_client.dart';
 import 'package:urbanogo/core/network/socket_service.dart';
 import 'package:urbanogo/core/repositories/driver_repository.dart';
+import 'package:urbanogo/core/theme/app_colors.dart';
 import 'package:urbanogo/features/pages/driver/cubit/driver_flow_cubit.dart';
-import 'package:urbanogo/features/pages/auth/cubit/auth_cubit.dart';
-import 'package:urbanogo/features/pages/auth/login_page.dart';
+import 'package:urbanogo/features/pages/home/widgets/home_top_bar.dart';
 import 'package:urbanogo/features/pages/ride/cubit/ride_flow_cubit.dart';
 import 'package:urbanogo/features/pages/ride/widgets/ride_request_sheet.dart';
 import 'package:urbanogo/features/pages/ride/widgets/rating_form.dart';
@@ -185,15 +185,6 @@ class _HomeMapViewState extends State<_HomeMapView>
     }
   }
 
-  void _logout() {
-    context.read<AuthCubit>().logout();
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => LoginPage(flavor: widget.flavor)),
-      (route) => false,
-    );
-  }
-
   Widget _driverRidePanel(BuildContext context, DriverFlowState driver) {
     final ride = driver.ride;
     if (ride == null ||
@@ -208,11 +199,12 @@ class _HomeMapViewState extends State<_HomeMapView>
       bottom: 30,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: AppColors.slate,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.line),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: ride.status == 'completed'
               ? RatingForm(
                   key: const ValueKey('driver-rating'),
@@ -231,21 +223,21 @@ class _HomeMapViewState extends State<_HomeMapView>
                     Text(
                       _driverRideLabel(driver),
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.cloud,
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       ride.passenger.name,
-                      style: const TextStyle(color: Colors.grey),
+                      style: const TextStyle(color: AppColors.mist),
                     ),
                     if (driver.errorMessage != null) ...[
                       const SizedBox(height: 8),
                       Text(
                         driver.errorMessage!,
-                        style: const TextStyle(color: Colors.redAccent),
+                        style: const TextStyle(color: AppColors.danger),
                       ),
                     ],
                     const SizedBox(height: 12),
@@ -280,29 +272,16 @@ class _HomeMapViewState extends State<_HomeMapView>
       height: 52,
       child: ElevatedButton(
         onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
         child: driver.busy
             ? const SizedBox(
                 height: 20,
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Colors.black,
+                  color: AppColors.ink,
                 ),
               )
-            : Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            : Text(label),
       ),
     );
   }
@@ -310,17 +289,17 @@ class _HomeMapViewState extends State<_HomeMapView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.ink,
       body: _currentPosition == null
           ? const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: Colors.white),
+                  CircularProgressIndicator(),
                   SizedBox(height: 16),
                   Text(
                     'Buscando sua localização...',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                    style: TextStyle(color: AppColors.mist, fontSize: 16),
                   ),
                 ],
               ),
@@ -356,7 +335,7 @@ class _HomeMapViewState extends State<_HomeMapView>
                           height: 60,
                           child: const Icon(
                             Icons.my_location,
-                            color: Colors.blueAccent,
+                            color: AppColors.pickup,
                             size: 30,
                           ),
                         ),
@@ -367,7 +346,7 @@ class _HomeMapViewState extends State<_HomeMapView>
                             height: 60,
                             child: const Icon(
                               Icons.location_on,
-                              color: Colors.redAccent,
+                              color: AppColors.destination,
                               size: 36,
                             ),
                           ),
@@ -383,43 +362,80 @@ class _HomeMapViewState extends State<_HomeMapView>
                             height: 60,
                             child: const Icon(
                               Icons.directions_car,
-                              color: Colors.amber,
+                              color: AppColors.driver,
                               size: 34,
                             ),
                           ),
                       ],
                     ),
 
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: IgnorePointer(
+                        child: Container(
+                          height: 160,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                AppColors.ink.withValues(alpha: 0.88),
+                                AppColors.ink.withValues(alpha: 0.0),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: HomeTopBar(flavor: widget.flavor),
+                    ),
+
                     if (!_isPassenger)
                       Positioned(
-                        top: 50,
+                        top: 96,
                         left: 16,
                         right: 16,
                         child: BlocBuilder<DriverFlowCubit, DriverFlowState>(
                           builder: (context, driver) => Container(
+                            padding: const EdgeInsets.only(left: 18, right: 6),
                             decoration: BoxDecoration(
-                              color: Colors.grey[900],
+                              color: AppColors.slate.withValues(alpha: 0.96),
                               borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
+                              border: Border.all(color: AppColors.line),
                             ),
                             child: Row(
                               children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  margin: const EdgeInsets.only(right: 10),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: driver.online
+                                        ? AppColors.driver
+                                        : AppColors.mist,
+                                  ),
+                                ),
                                 Expanded(
                                   child: Text(
                                     driver.online
                                         ? 'Você está online'
                                         : 'Você está offline',
-                                    style: const TextStyle(color: Colors.white),
+                                    style: const TextStyle(
+                                      color: AppColors.cloud,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                                 Switch(
                                   value: driver.online,
+                                  activeTrackColor: AppColors.sol,
                                   onChanged: (online) async {
                                     final driverFlow = context
                                         .read<DriverFlowCubit>();
@@ -450,33 +466,35 @@ class _HomeMapViewState extends State<_HomeMapView>
                             bottom: 36,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.grey[900],
+                                color: AppColors.slate,
                                 borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: AppColors.line),
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(20),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
                                       'Nova corrida',
                                       style: const TextStyle(
-                                        color: Colors.grey,
+                                        color: AppColors.mist,
                                       ),
                                     ),
+                                    const SizedBox(height: 2),
                                     Text(
                                       offer.passenger.name,
                                       style: const TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.cloud,
                                         fontSize: 22,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
                                       '${(offer.distanceToPickupMeters / 1000).toStringAsFixed(1)} km até o embarque',
                                       style: const TextStyle(
-                                        color: Colors.white70,
+                                        color: AppColors.mist,
                                       ),
                                     ),
                                     StreamBuilder<int>(
@@ -496,8 +514,8 @@ class _HomeMapViewState extends State<_HomeMapView>
                                           child: Text(
                                             'Responda em ${seconds}s',
                                             style: const TextStyle(
-                                              color: Colors.amber,
-                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.sol,
+                                              fontWeight: FontWeight.w700,
                                             ),
                                           ),
                                         );
@@ -534,27 +552,18 @@ class _HomeMapViewState extends State<_HomeMapView>
                             _driverRidePanel(context, driver),
                       ),
                     Positioned(
-                      bottom: _isPassenger ? 300 : 30,
+                      bottom: _isPassenger ? 312 : 30,
                       right: 16,
-                      child: Column(
-                        children: [
-                          FloatingActionButton(
-                            heroTag: 'logout',
-                            mini: true,
-                            backgroundColor: Colors.grey[900],
-                            foregroundColor: Colors.white,
-                            onPressed: _logout,
-                            child: const Icon(Icons.logout),
-                          ),
-                          const SizedBox(height: 12),
-                          FloatingActionButton(
-                            heroTag: 'recenter',
-                            backgroundColor: Colors.grey[900],
-                            foregroundColor: Colors.white,
-                            onPressed: _centerMapOnUser,
-                            child: const Icon(Icons.gps_fixed),
-                          ),
-                        ],
+                      child: FloatingActionButton(
+                        heroTag: 'recenter',
+                        backgroundColor: AppColors.slate,
+                        foregroundColor: AppColors.cloud,
+                        elevation: 0,
+                        shape: const CircleBorder(
+                          side: BorderSide(color: AppColors.line),
+                        ),
+                        onPressed: _centerMapOnUser,
+                        child: const Icon(Icons.gps_fixed),
                       ),
                     ),
 

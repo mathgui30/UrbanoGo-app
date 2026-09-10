@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:urbanogo/core/theme/app_colors.dart';
+
 class RatingForm extends StatefulWidget {
   final String title;
   final String subtitle;
@@ -49,7 +51,7 @@ class _RatingFormState extends State<RatingForm> {
           const Text(
             'Obrigado pela avaliação!',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.cloud,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -67,13 +69,13 @@ class _RatingFormState extends State<RatingForm> {
         Text(
           widget.title,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.cloud,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 4),
-        Text(widget.subtitle, style: const TextStyle(color: Colors.grey)),
+        Text(widget.subtitle, style: const TextStyle(color: AppColors.mist)),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -85,7 +87,7 @@ class _RatingFormState extends State<RatingForm> {
                   : () => setState(() => _score = value),
               icon: Icon(
                 value <= _score ? Icons.star : Icons.star_border,
-                color: Colors.amber,
+                color: AppColors.sol,
                 size: 36,
               ),
             );
@@ -96,12 +98,12 @@ class _RatingFormState extends State<RatingForm> {
           controller: _comment,
           enabled: !widget.submitting,
           maxLines: 2,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppColors.cloud),
           decoration: InputDecoration(
             hintText: 'Comentário (opcional)',
-            hintStyle: const TextStyle(color: Colors.grey),
+            hintStyle: const TextStyle(color: AppColors.mist),
             filled: true,
-            fillColor: Colors.white10,
+            fillColor: AppColors.ink,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
@@ -112,7 +114,7 @@ class _RatingFormState extends State<RatingForm> {
           const SizedBox(height: 8),
           Text(
             widget.errorMessage!,
-            style: const TextStyle(color: Colors.redAccent),
+            style: const TextStyle(color: AppColors.danger),
           ),
         ],
         const SizedBox(height: 12),
@@ -121,8 +123,8 @@ class _RatingFormState extends State<RatingForm> {
           child: ElevatedButton(
             onPressed: widget.submitting || _score == 0 ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
+              backgroundColor: AppColors.cloud,
+              foregroundColor: AppColors.ink,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -133,7 +135,7 @@ class _RatingFormState extends State<RatingForm> {
                     width: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.black,
+                      color: AppColors.ink,
                     ),
                   )
                 : const Text(
@@ -144,7 +146,7 @@ class _RatingFormState extends State<RatingForm> {
         ),
         TextButton(
           onPressed: widget.submitting ? null : widget.onDone,
-          style: TextButton.styleFrom(foregroundColor: Colors.grey),
+          style: TextButton.styleFrom(foregroundColor: AppColors.mist),
           child: const Text('Agora não'),
         ),
       ],
@@ -157,8 +159,8 @@ class _RatingFormState extends State<RatingForm> {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
+          backgroundColor: AppColors.cloud,
+          foregroundColor: AppColors.ink,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
