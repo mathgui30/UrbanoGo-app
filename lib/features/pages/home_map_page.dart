@@ -13,6 +13,7 @@ import 'package:urbanogo/features/pages/auth/cubit/auth_cubit.dart';
 import 'package:urbanogo/features/pages/auth/login_page.dart';
 import 'package:urbanogo/features/pages/ride/cubit/ride_flow_cubit.dart';
 import 'package:urbanogo/features/pages/ride/widgets/ride_request_sheet.dart';
+import 'package:urbanogo/features/pages/ride/widgets/rating_form.dart';
 import 'package:urbanogo/shared_widgets/mapa_base.dart';
 
 class HomeMapPage extends StatelessWidget {
@@ -190,6 +191,119 @@ class _HomeMapViewState extends State<_HomeMapView>
       context,
       MaterialPageRoute(builder: (_) => LoginPage(flavor: widget.flavor)),
       (route) => false,
+    );
+  }
+
+  Widget _driverRidePanel(BuildContext context, DriverFlowState driver) {
+    final ride = driver.ride;
+    if (ride == null ||
+        ride.status == 'cancelled' ||
+        ride.status == 'expired') {
+      return const SizedBox.shrink();
+    }
+    final cubit = context.read<DriverFlowCubit>();
+    return Positioned(
+      left: 16,
+      right: 16,
+      bottom: 30,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: ride.status == 'completed'
+              ? RatingForm(
+                  key: const ValueKey('driver-rating'),
+                  title: 'Como foi a corrida?',
+                  subtitle: 'Avalie ${ride.passenger.name}',
+                  submitting: driver.ratingSubmitting,
+                  submitted: driver.ratingSubmitted,
+                  errorMessage: driver.errorMessage,
+                  onSubmit: cubit.rateRide,
+                  onDone: cubit.finishRide,
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _driverRideLabel(driver),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      ride.passenger.name,
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    if (driver.errorMessage != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        driver.errorMessage!,
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    _driverRideAction(driver, cubit),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  String _driverRideLabel(DriverFlowState driver) {
+    if (driver.ride?.status == 'in_progress') return 'Em viagem';
+    if (driver.arrived) return 'No local de embarque';
+    return 'A caminho do embarque';
+  }
+
+  Widget _driverRideAction(DriverFlowState driver, DriverFlowCubit cubit) {
+    final String label;
+    final VoidCallback? onPressed;
+    if (driver.ride?.status == 'in_progress') {
+      label = 'Concluir corrida';
+      onPressed = driver.busy ? null : cubit.completeTrip;
+    } else if (driver.arrived) {
+      label = 'Iniciar viagem';
+      onPressed = driver.busy ? null : cubit.startTrip;
+    } else {
+      label = 'Cheguei ao local';
+      onPressed = driver.busy ? null : cubit.arrive;
+    }
+    return SizedBox(
+      height: 52,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: driver.busy
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.black,
+                ),
+              )
+            : Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+      ),
     );
   }
 
@@ -413,6 +527,11 @@ class _HomeMapViewState extends State<_HomeMapView>
                             ),
                           );
                         },
+                      ),
+                    if (!_isPassenger)
+                      BlocBuilder<DriverFlowCubit, DriverFlowState>(
+                        builder: (context, driver) =>
+                            _driverRidePanel(context, driver),
                       ),
                     Positioned(
                       bottom: _isPassenger ? 300 : 30,

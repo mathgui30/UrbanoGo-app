@@ -49,10 +49,11 @@ class MatchingOfferModel {
         json['dropoff'] as Map<String, dynamic>,
       ),
       passenger: MatchingOfferPassenger.fromJson(
-        json['passenger'] as Map<String, dynamic>,
+        Map<String, dynamic>.from(json['passenger'] as Map),
       ),
-      distanceToPickupMeters: json['distance_to_pickup_meters'] as int,
-      priceCents: json['price_cents'] as int,
+      distanceToPickupMeters:
+          (json['distance_to_pickup_meters'] as num?)?.round() ?? 0,
+      priceCents: (json['price_cents'] as num?)?.round() ?? 0,
     );
   }
 }

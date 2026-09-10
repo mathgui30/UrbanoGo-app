@@ -155,6 +155,26 @@ class RideFlowCubit extends Cubit<RideFlowState> {
     }
   }
 
+  Future<void> rateRide(int score, String? comment) async {
+    final ride = state.ride;
+    if (ride == null || state.ratingSubmitting || state.ratingSubmitted) return;
+
+    emit(state.copyWith(ratingSubmitting: true, clearRatingError: true));
+    try {
+      await _rideRepository.rate(ride.id, score, comment: comment);
+      emit(state.copyWith(ratingSubmitting: false, ratingSubmitted: true));
+    } on ApiException catch (e) {
+      emit(state.copyWith(ratingSubmitting: false, ratingError: e.message));
+    } catch (_) {
+      emit(
+        state.copyWith(
+          ratingSubmitting: false,
+          ratingError: _connectionErrorMessage,
+        ),
+      );
+    }
+  }
+
   void reset() {
     if (state.ride != null) _socketService.leaveRide(state.ride!.id);
     _pollTimer?.cancel();

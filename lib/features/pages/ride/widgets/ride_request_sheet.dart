@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:urbanogo/core/models/ride_model.dart';
 import 'package:urbanogo/features/pages/ride/cubit/ride_flow_cubit.dart';
+import 'package:urbanogo/features/pages/ride/widgets/rating_form.dart';
 
 class RideRequestSheet extends StatelessWidget {
   final LatLng? origin;
@@ -166,16 +167,18 @@ class RideRequestSheet extends StatelessWidget {
 
       case RideFlowStatus.completed:
         return [
-          const Text(
-            'Viagem concluída',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          RatingForm(
+            key: const ValueKey('passenger-rating'),
+            title: 'Como foi sua viagem?',
+            subtitle: state.ride?.driver != null
+                ? 'Avalie ${state.ride!.driver!.name}'
+                : 'Avalie o motorista',
+            submitting: state.ratingSubmitting,
+            submitted: state.ratingSubmitted,
+            errorMessage: state.ratingError,
+            onSubmit: cubit.rateRide,
+            onDone: cubit.reset,
           ),
-          const SizedBox(height: 16),
-          _primaryButton(label: 'Nova corrida', onPressed: cubit.reset),
         ];
 
       case RideFlowStatus.cancelled:

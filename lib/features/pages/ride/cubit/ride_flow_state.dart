@@ -21,6 +21,9 @@ class RideFlowState {
   final String? errorMessage;
   final DriverLocationModel? driverLocation;
   final DriverLocationModel? previousDriverLocation;
+  final bool ratingSubmitting;
+  final bool ratingSubmitted;
+  final String? ratingError;
 
   const RideFlowState({
     this.status = RideFlowStatus.idle,
@@ -31,6 +34,9 @@ class RideFlowState {
     this.errorMessage,
     this.driverLocation,
     this.previousDriverLocation,
+    this.ratingSubmitting = false,
+    this.ratingSubmitted = false,
+    this.ratingError,
   });
 
   bool get isBusy =>
@@ -45,8 +51,12 @@ class RideFlowState {
     String? errorMessage,
     DriverLocationModel? driverLocation,
     DriverLocationModel? previousDriverLocation,
+    bool? ratingSubmitting,
+    bool? ratingSubmitted,
+    String? ratingError,
     bool clearQuote = false,
     bool clearError = false,
+    bool clearRatingError = false,
   }) {
     return RideFlowState(
       status: status ?? this.status,
@@ -58,6 +68,9 @@ class RideFlowState {
       driverLocation: driverLocation ?? this.driverLocation,
       previousDriverLocation:
           previousDriverLocation ?? this.previousDriverLocation,
+      ratingSubmitting: ratingSubmitting ?? this.ratingSubmitting,
+      ratingSubmitted: ratingSubmitted ?? this.ratingSubmitted,
+      ratingError: clearRatingError ? null : (ratingError ?? this.ratingError),
     );
   }
 }
