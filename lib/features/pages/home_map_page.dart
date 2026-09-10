@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:urbanogo/core/repositories/ride_repository.dart';
 import 'package:urbanogo/core/network/api_client.dart';
 import 'package:urbanogo/core/network/socket_service.dart';
+import 'package:urbanogo/core/models/matching_offer_model.dart';
 import 'package:urbanogo/core/repositories/driver_repository.dart';
 import 'package:urbanogo/core/theme/app_colors.dart';
 import 'package:urbanogo/features/pages/driver/cubit/driver_flow_cubit.dart';
@@ -185,28 +186,77 @@ class _HomeMapViewState extends State<_HomeMapView>
     }
   }
 
-  Widget _driverRidePanel(BuildContext context, DriverFlowState driver) {
+  Widget _driverBottomPanel(BuildContext context, DriverFlowState driver) {
     final ride = driver.ride;
-    if (ride == null ||
-        ride.status == 'cancelled' ||
-        ride.status == 'expired') {
-      return const SizedBox.shrink();
-    }
+    final hasRide = ride != null &&
+        ride.status != 'cancelled' &&
+        ride.status != 'expired';
+    if (hasRide) return _driverRideContent(context, driver);
+    if (driver.offer != null) return _offerContent(context, driver.offer!);
+    return const SizedBox.shrink();
+  }
+
+  Widget _offerContent(BuildContext context, MatchingOfferModel offer) {
     final cubit = context.read<DriverFlowCubit>();
-    return Positioned(
-      left: 16,
-      right: 16,
-      bottom: 30,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.slate,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.line),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.slate,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Nova corrida', style: TextStyle(color: AppColors.mist)),
+            const SizedBox(height: 2),
+            Text(
+              offer.passenger.name,
+              style: const TextStyle(
+                color: AppColors.cloud,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${(offer.distanceToPickupMeters / 1000).toStringAsFixed(1)} km até o embarque',
+              style: const TextStyle(color: AppColors.mist),
+            ),
+            _OfferCountdown(expiresAt: offer.expiresAt),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                OutlinedButton(
+                  onPressed: cubit.reject,
+                  child: const Text('Recusar'),
+                ),
+                ElevatedButton(
+                  onPressed: cubit.accept,
+                  child: const Text('Aceitar'),
+                ),
+              ],
+            ),
+          ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: ride.status == 'completed'
-              ? RatingForm(
+      ),
+    );
+  }
+
+  Widget _driverRideContent(BuildContext context, DriverFlowState driver) {
+    final ride = driver.ride!;
+    final cubit = context.read<DriverFlowCubit>();
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.slate,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: ride.status == 'completed'
+            ? RatingForm(
                   key: const ValueKey('driver-rating'),
                   title: 'Como foi a corrida?',
                   subtitle: 'Avalie ${ride.passenger.name}',
@@ -244,7 +294,6 @@ class _HomeMapViewState extends State<_HomeMapView>
                     _driverRideAction(driver, cubit),
                   ],
                 ),
-        ),
       ),
     );
   }
@@ -456,100 +505,14 @@ class _HomeMapViewState extends State<_HomeMapView>
                         ),
                       ),
                     if (!_isPassenger)
-                      BlocBuilder<DriverFlowCubit, DriverFlowState>(
-                        builder: (context, driver) {
-                          final offer = driver.offer;
-                          if (offer == null) return const SizedBox.shrink();
-                          return Positioned(
-                            left: 16,
-                            right: 16,
-                            bottom: 36,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.slate,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppColors.line),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Nova corrida',
-                                      style: const TextStyle(
-                                        color: AppColors.mist,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      offer.passenger.name,
-                                      style: const TextStyle(
-                                        color: AppColors.cloud,
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '${(offer.distanceToPickupMeters / 1000).toStringAsFixed(1)} km até o embarque',
-                                      style: const TextStyle(
-                                        color: AppColors.mist,
-                                      ),
-                                    ),
-                                    StreamBuilder<int>(
-                                      stream: Stream.periodic(
-                                        const Duration(seconds: 1),
-                                        (value) => value,
-                                      ),
-                                      builder: (context, snapshot) {
-                                        final seconds = offer.expiresAt
-                                            .difference(DateTime.now())
-                                            .inSeconds
-                                            .clamp(0, 15);
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 12,
-                                          ),
-                                          child: Text(
-                                            'Responda em ${seconds}s',
-                                            style: const TextStyle(
-                                              color: AppColors.sol,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        OutlinedButton(
-                                          onPressed: context
-                                              .read<DriverFlowCubit>()
-                                              .reject,
-                                          child: const Text('Recusar'),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: context
-                                              .read<DriverFlowCubit>()
-                                              .accept,
-                                          child: const Text('Aceitar'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    if (!_isPassenger)
-                      BlocBuilder<DriverFlowCubit, DriverFlowState>(
-                        builder: (context, driver) =>
-                            _driverRidePanel(context, driver),
+                      Positioned(
+                        left: 16,
+                        right: 16,
+                        bottom: 30,
+                        child: BlocBuilder<DriverFlowCubit, DriverFlowState>(
+                          builder: (context, driver) =>
+                              _driverBottomPanel(context, driver),
+                        ),
                       ),
                     Positioned(
                       bottom: _isPassenger ? 312 : 30,
@@ -578,6 +541,52 @@ class _HomeMapViewState extends State<_HomeMapView>
                 );
               },
             ),
+    );
+  }
+}
+
+class _OfferCountdown extends StatefulWidget {
+  final DateTime expiresAt;
+
+  const _OfferCountdown({required this.expiresAt});
+
+  @override
+  State<_OfferCountdown> createState() => _OfferCountdownState();
+}
+
+class _OfferCountdownState extends State<_OfferCountdown> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => setState(() {}),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final seconds = widget.expiresAt
+        .difference(DateTime.now())
+        .inSeconds
+        .clamp(0, 15);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Text(
+        'Responda em ${seconds}s',
+        style: const TextStyle(
+          color: AppColors.sol,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }
