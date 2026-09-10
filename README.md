@@ -30,6 +30,13 @@ Abra o terminal no VS Code, na raiz do projeto (`urbanogo`), e rode o comando pa
 flutter pub get
 ```
 
+### Passo 4.1: Configurar o ambiente
+O app lê a URL do backend de um arquivo `.env` (não versionado). Copie o exemplo:
+```powershell
+Copy-Item .env.example .env
+```
+O padrão já aponta para a API publicada. Para usar um backend local pelo emulador Android, edite `.env` e troque `API_URL` por `http://10.0.2.2:3000`.
+
 ### Passo 5: Iniciar o Aplicativo (Flavors)
 Como o projeto é dividido em dois aplicativos diferentes na mesma base de código (Flavors), você precisa especificar qual deles quer compilar. No terminal, execute um dos comandos abaixo:
 

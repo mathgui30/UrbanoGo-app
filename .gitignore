@@ -45,4 +45,7 @@ app.*.map.json
 /android/app/release
 .aider*
 
+# Environment: real .env stays out of git; copy .env.example to .env before
+# building (see README / setup).
 .env*
+!.env.example

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:urbanogo/core/config/app_config.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -13,8 +14,7 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  static const String baseUrl =
-      'http://10.0.2.2:3000'; 
+  final String baseUrl = AppConfig.apiBaseUrl;
   String? _token;
 
   void setToken(String token) {
