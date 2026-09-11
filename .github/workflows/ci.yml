@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configurar Java 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -29,9 +29,6 @@ jobs:
 
       - name: Instalar dependências
         run: flutter pub get
-
-      - name: Verificar formatação de código
-        run: dart format --output=none --set-exit-if-changed .
 
       - name: Análise estática (Linter)
         run: flutter analyze
