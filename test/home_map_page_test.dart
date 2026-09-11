@@ -76,7 +76,7 @@ void main() {
           const MethodChannel('flutter.baseflow.com/geolocator'),
           (MethodCall methodCall) async {
             if (methodCall.method == 'isLocationServiceEnabled') return true;
-            if (methodCall.method == 'checkPermission') return 3; // always
+            if (methodCall.method == 'checkPermission') return 3; 
             if (methodCall.method == 'getCurrentPosition') {
               return {
                 'latitude': -3.73,
