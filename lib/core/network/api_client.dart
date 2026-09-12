@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:urbanogo/core/config/app_config.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -13,17 +14,22 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  static const String baseUrl =
-      'http://10.0.2.2:3000'; 
+  final String baseUrl = AppConfig.apiBaseUrl;
   String? _token;
+
+  String? get token => _token;
 
   void setToken(String token) {
     _token = token;
   }
 
-  Map<String, String> get _headers {
+  void clearToken() {
+    _token = null;
+  }
+
+  Map<String, String> _buildHeaders({bool json = false}) {
     return {
-      'Content-Type': 'application/json',
+      if (json) 'Content-Type': 'application/json',
       if (_token != null) 'Authorization': 'Bearer $_token',
     };
   }
@@ -41,7 +47,7 @@ class ApiClient {
   Future<dynamic> get(String path) async {
     final response = await http.get(
       Uri.parse('$baseUrl$path'),
-      headers: _headers,
+      headers: _buildHeaders(),
     );
     return _processResponse(response);
   }
@@ -49,7 +55,7 @@ class ApiClient {
   Future<dynamic> post(String path, {Map<String, dynamic>? body}) async {
     final response = await http.post(
       Uri.parse('$baseUrl$path'),
-      headers: _headers,
+      headers: _buildHeaders(json: body != null),
       body: body != null ? jsonEncode(body) : null,
     );
     return _processResponse(response);
@@ -58,7 +64,7 @@ class ApiClient {
   Future<dynamic> patch(String path, {Map<String, dynamic>? body}) async {
     final response = await http.patch(
       Uri.parse('$baseUrl$path'),
-      headers: _headers,
+      headers: _buildHeaders(json: body != null),
       body: body != null ? jsonEncode(body) : null,
     );
     return _processResponse(response);
@@ -67,7 +73,7 @@ class ApiClient {
   Future<dynamic> put(String path, {Map<String, dynamic>? body}) async {
     final response = await http.put(
       Uri.parse('$baseUrl$path'),
-      headers: _headers,
+      headers: _buildHeaders(json: body != null),
       body: body != null ? jsonEncode(body) : null,
     );
     return _processResponse(response);
@@ -76,7 +82,7 @@ class ApiClient {
   Future<dynamic> delete(String path) async {
     final response = await http.delete(
       Uri.parse('$baseUrl$path'),
-      headers: _headers,
+      headers: _buildHeaders(),
     );
     return _processResponse(response);
   }
